@@ -2,28 +2,39 @@
 
 //echo 'hello world';
 
-global $orders;
-
 class Order
 {
-    public string $id;
-    public int $userId;
-    public float $totalAmount;
+    public function __construct(private string $id, private int $userId, private float $totalAmount) {}
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+    public function getUserId(): int
+    {
+        return $this->userId;
+    }
+    public function getTotalAmount(): float
+    {
+        return $this->totalAmount;
+    }
 }
 
 class OrderProcessor
 {
+    private $orders; // This will be used to store orders in memory
+
     public function addOrder(Order $order): void
     {
-        $GLOBALS['orders'][] = $order;
+        $this->orders[] = $order;
     }
 
     public function getOrdersByUserId(int $userId): array
     {
         $neededOrders = [];
 
-        array_walk($GLOBALS['orders'], function ($order) use ($userId, &$neededOrders) {
-            if ($order->userId === $userId) {
+        array_filter($this->orders, function ($order) use ($userId, &$neededOrders) {
+            if ($order->getUserId() === $userId) {
                 return $neededOrders[] = $order;
             }
         });
@@ -35,31 +46,25 @@ class OrderProcessor
     {
         $seekingAmount = 0.0;
 
-        array_walk($GLOBALS['orders'], function ($order) use (&$seekingAmount) {
-            return $seekingAmount += $order->totalAmount;
+        array_filter($this->orders, function ($order) use (&$seekingAmount) {
+            return $seekingAmount += $order->getTotalAmount();
         });
 
         return $seekingAmount;
     }
 }
 
-for ($i = 0; $i <= 3; $i++) {
-    $order = new Order();
-    $order->id = "order-$i";
-    $order->userId = $i;
-    $order->totalAmount = 100.0 + ($i * 10.0);
+$processor = new OrderProcessor();
 
-    $processor = new OrderProcessor();
+for ($i = 0; $i <= 3; $i++) {
+    $order = new Order("order-$i", $i, 100.0 + ($i * 10.0));
     $processor->addOrder($order);
 }
-
-$processor = new OrderProcessor();
-$processor->addOrder($order);
 
 echo "Total revenue: " . $processor->getTotalRevenue() . "\n";
 
 $neededOrders = $processor->getOrdersByUserId(1);
 
-foreach ($neededOrders as $order){
-    echo "Order ID: {$order->id}, User ID: {$order->userId}, Total Amount: {$order->totalAmount}\n";
+foreach ($neededOrders as $order) {
+    echo "Order ID: {$order->getId()}, User ID: {$order->getUserId()}, Total Amount: {$order->getTotalAmount()}\n";
 }
